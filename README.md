@@ -2,6 +2,8 @@
 
 <p align="center">
   <img src="cPanelSniper.jpg" alt="cPanelSniper" width="700"/>
+  <img width="1519" height="696" alt="image" src="https://github.com/user-attachments/assets/6e89ad15-a7b9-40fa-a938-6314ea612395" />
+
 </p>
 
 <p align="center">
