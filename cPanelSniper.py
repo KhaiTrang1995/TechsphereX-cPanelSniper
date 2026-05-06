@@ -466,21 +466,9 @@ def action_change_passwd(ctx, new_password):
     """Change root password"""
     log("API", f"Changing root password → {new_password}")
     s, data = whm_api(*ctx[:6], "passwd",
-                      {"user": "root", "password": new_password}, ctx[6], ctx[-1])
+                      {"user": "root", "password": new_password}, ctx[6])
     safe_print(json.dumps(data, indent=2)[:800] if isinstance(data, dict)
                else str(data)[:800])
-
-def action_exec_cmd(ctx, cmd):
-    """Execute OS command via WHM exec API"""
-    log("API", f"Executing command: {cmd}")
-    s, data = whm_api(*ctx[:6], "scripts/exec",
-                      {"command": cmd}, ctx[6])
-    if isinstance(data, dict):
-        output = data.get("data", {}).get("output",
-                 data.get("metadata", {}).get("reason", str(data)))
-        safe_print(f"\n{C.GREEN}{output}{C.RESET}")
-    else:
-        safe_print(str(data)[:800])
 
 def action_server_info(ctx):
     """Get server info via multiple lightweight endpoints"""
@@ -589,8 +577,7 @@ def action_create_user(ctx, username: str, domain: str, passwd: str):
     log("API", f"Creating account: {username} / {domain}")
     s, data = whm_api(*ctx[:6], "createacct",
                       {"username": username, "domain": domain,
-                       "password": passwd, "plan": "default"}, ctx[6],
-                      ctx[-1])
+                       "password": passwd, "plan": "default"}, ctx[6])
     safe_print(json.dumps(data, indent=2)[:800] if isinstance(data, dict)
                else str(data)[:800])
 

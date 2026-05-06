@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="cPanelSniper — CVE-2026-41940 cPanel & WHM Auth Bypass Scanner GUI">
+  <title>cPanelSniper — CVE-2026-41940 Scanner</title>
+  <link rel="stylesheet" href="/gui/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>🎯</text></svg>">
+</head>
+<body>
+  <div class="app-container">
+    <!-- ═══ HEADER ═══ -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo-icon">⚡</div>
+        <div class="logo-text">
+          <h1>cPanelSniper</h1>
+          <p>CVE-2026-41940 — cPanel & WHM Auth Bypass via CRLF Injection</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <span class="badge badge-cve">🔴 CVE-2026-41940</span>
+        <span class="badge badge-cvss">⚠️ CVSS 10.0</span>
+        <span class="badge badge-status" id="badgeStatus">● Ready</span>
+      </div>
+    </header>
+
+    <!-- ═══ STATS BAR ═══ -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-value" id="statTargets">0</div>
+        <div class="stat-label">Targets</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="statScanned">0</div>
+        <div class="stat-label">Scanned</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value vuln" id="statVuln">0</div>
+        <div class="stat-label">Vulnerable</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="statElapsed">0.0s</div>
+        <div class="stat-label">Elapsed</div>
+      </div>
+    </div>
+
+    <!-- ═══ MAIN GRID ═══ -->
+    <div class="grid-main">
+      <!-- ── Left Column ── -->
+      <div class="col-left">
+        <!-- Target Config -->
+        <div class="card" id="cardConfig">
+          <div class="card-header">
+            <h2><span class="icon">🎯</span> Target Configuration</h2>
+          </div>
+          <div class="card-body">
+            <div class="mode-toggle">
+              <button class="mode-btn active" id="btnModeSingle" onclick="setMode('single')">Single</button>
+              <button class="mode-btn" id="btnModeBatch" onclick="setMode('batch')">Batch</button>
+            </div>
+
+            <div id="singleInput" class="single-input">
+              <div class="form-group">
+                <label class="form-label" for="targetUrl">Target URL</label>
+                <input type="text" class="form-input" id="targetUrl"
+                       placeholder="https://target.com:2087"
+                       autocomplete="off" spellcheck="false">
+              </div>
+            </div>
+
+            <div id="batchInput" class="batch-input">
+              <div class="form-group">
+                <label class="form-label" for="targetBatch">Targets (one per line)</label>
+                <textarea class="form-textarea" id="targetBatch" rows="6"
+                  placeholder="https://target1.com:2087&#10;https://target2.com:2087&#10;https://192.168.1.100:2087"></textarea>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="threads">Threads</label>
+                <input type="number" class="form-input" id="threads" value="10" min="1" max="100">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="timeout">Timeout (s)</label>
+                <input type="number" class="form-input" id="timeout" value="15" min="5" max="120">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="hostname">Hostname Override (optional)</label>
+              <input type="text" class="form-input" id="hostname"
+                     placeholder="auto-discovered" autocomplete="off">
+            </div>
+
+            <div class="progress-container" id="progressContainer" style="display:none;">
+              <div class="progress-stages">
+                <div class="progress-stage" id="stage0">
+                  <span class="stage-num">0</span>
+                  <span class="stage-label">Discovery</span>
+                </div>
+                <div class="progress-stage" id="stage1">
+                  <span class="stage-num">1</span>
+                  <span class="stage-label">Preauth</span>
+                </div>
+                <div class="progress-stage" id="stage2">
+                  <span class="stage-num">2</span>
+                  <span class="stage-label">CRLF Inject</span>
+                </div>
+                <div class="progress-stage" id="stage3">
+                  <span class="stage-num">3</span>
+                  <span class="stage-label">Verify</span>
+                </div>
+              </div>
+            </div>
+
+            <button class="btn btn-scan" id="btnScan" onclick="startScan()">
+              ⚡ Start Scan
+            </button>
+          </div>
+        </div>
+
+        <!-- Post-Exploit Panel -->
+        <div class="card" id="cardPostExploit" style="display:none;">
+          <div class="card-header">
+            <h2><span class="icon">💀</span> Post-Exploit</h2>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Select Target</label>
+              <select class="form-select" id="postExploitTarget"></select>
+            </div>
+            <div class="action-bar">
+              <button class="btn btn-action btn-sm" onclick="runAction('list')">📋 Accounts</button>
+              <button class="btn btn-action btn-sm" onclick="runAction('info')">ℹ️ Info</button>
+              <button class="btn btn-action btn-sm" onclick="runAction('version')">📌 Version</button>
+              <button class="btn btn-action btn-sm" onclick="runAction('cmd')">💻 Exec</button>
+              <button class="btn btn-action btn-sm" onclick="runAction('passwd')">🔑 Passwd</button>
+            </div>
+            <div class="action-params" id="actionParams" style="display:none;">
+              <div class="form-group">
+                <label class="form-label" id="actionParamLabel">Command</label>
+                <input type="text" class="form-input" id="actionParamInput"
+                       placeholder="id;whoami;uname -a">
+              </div>
+              <button class="btn btn-action btn-sm" onclick="executeAction()">▶ Execute</button>
+            </div>
+            <div class="action-output" id="actionOutput">Waiting for action...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Right Column ── -->
+      <div class="col-right">
+        <!-- Log Console -->
+        <div class="card">
+          <div class="card-header">
+            <h2><span class="icon">📟</span> Live Console</h2>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-ghost btn-sm" onclick="clearLogs()">Clear</button>
+              <button class="btn btn-ghost btn-sm" onclick="toggleAutoScroll()">⬇ Auto</button>
+            </div>
+          </div>
+          <div class="card-body" style="padding:0;">
+            <div class="log-console" id="logConsole">
+              <div class="log-line log-placeholder">⏳ Waiting for scan to start...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div class="card">
+          <div class="card-header">
+            <h2><span class="icon">🏆</span> Results</h2>
+            <button class="btn btn-export btn-sm" id="btnExport" onclick="exportResults()" style="display:none;">
+              📥 Export JSON
+            </button>
+          </div>
+          <div class="card-body" id="resultsBody">
+            <div class="results-empty" id="resultsEmpty">
+              <div class="empty-icon">🔍</div>
+              <p>No results yet. Start a scan to find vulnerable targets.</p>
+            </div>
+            <div id="resultsContainer"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ FOOTER ═══ -->
+    <footer class="footer">
+      cPanelSniper v2.0 — CVE-2026-41940 | By <a href="https://github.com/ynsmroztas" target="_blank">Mitsec (@ynsmroztas)</a>
+      | GUI by TechsphereX | For authorized security testing only
+    </footer>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script src="/gui/app.js"></script>
+</body>
+</html>
